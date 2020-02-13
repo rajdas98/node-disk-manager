@@ -37,16 +37,33 @@ install:
   - make install-test-infra
 
 before_script:
-  - if [ "$TRAVIS_CPU_ARCH" == "amd64" ]; then
-      sudo minikube start --vm-driver=none;
-      sudo minikube update-context;
-      sudo chown -R $USER $HOME/.minikube;
-      sudo chown -R $USER $HOME/.kube;
-      make shellcheck;
-    fi
+  # - if [ "$TRAVIS_CPU_ARCH" == "amd64" ]; then
+  - sudo apt-get update && sudo apt-get install docker.io -y && sudo apt-get install curl -y && sudo apt-get install wget
+  - docker version
+  - sudo service docker start
+  - docker version
+  - wget https://dl.google.com/go/go1.13.5.linux-amd64.tar.gz && sudo tar zxf go1.13.5.linux-amd64.tar.gz -C /usr/local/
+  - export PATH=$PATH:/usr/local/go/bin
+  - GO111MODULE="on" go get sigs.k8s.io/kind@v0.6.1 && export PATH=$PATH:~/go/bin
+  - kind version
+  - docker version
+  - kind create cluster --loglevel debug
+  - export KUBECONFIG="$(kind get kubeconfig-path --name="kind")"
+  - curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.17.0/bin/linux/amd64/kubectl
+  - chmod +x ./kubectl
+  - sudo mv ./kubectl /usr/local/bin/kubectl
+  - kubectl version
+
+
+      # sudo minikube start --vm-driver=none;
+      # sudo minikube update-context;
+      # sudo chown -R $USER $HOME/.minikube;
+      # sudo chown -R $USER $HOME/.kube;
+  - make shellcheck;
+    # fi
 
 script:
-  - make
+  - sudo make
   # Here sudo -E env "PATH=$PATH" make test is required for running tests with
   # sudo permissions since we are making use of scsi device mockdata in smartprobe_test
   # which could be fetched for a SCSI device with sudo permissions only since to access
